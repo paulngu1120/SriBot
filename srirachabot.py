@@ -13,58 +13,63 @@ ircsock.send(bytes("USER "+ botnick +" "+ botnick +" "+ botnick + " " + botnick 
 ircsock.send(bytes("NICK "+ botnick +"\n", "UTF-8")) # assign the nick to the bot
 
 def joinchan(chan): # join channel(s).
-  ircsock.send(bytes("JOIN "+ chan +"\n", "UTF-8")) 
-  ircmsg = ""
-  while ircmsg.find("End of /NAMES list.") == -1: 
-    ircmsg = ircsock.recv(2048).decode("UTF-8")
-    ircmsg = ircmsg.strip('\n\r')
-    print(ircmsg)
+    ircsock.send(bytes("JOIN "+ chan +"\n", "UTF-8")) 
+    ircmsg = ""
+    while ircmsg.find("End of /NAMES list.") == -1: 
+        ircmsg = ircsock.recv(2048).decode("UTF-8")
+        ircmsg = ircmsg.strip('\n\r')
+        print(ircmsg)
 
 def ping(): # respond to server Pings.
-  ircsock.send(bytes("PONG :pingis\n", "UTF-8"))
+    ircsock.send(bytes("PONG :pingis\n", "UTF-8"))
 
 def sendmsg(msg, target=channel): # sends messages to the target.
-  ircsock.send(bytes("PRIVMSG "+ target +" :"+ msg +"\n", "UTF-8"))
+    ircsock.send(bytes("PRIVMSG "+ channel +" :"+ msg +"\n", "UTF-8"))
 
-def help(name, topic=''):
-  message = ''
-  if topic == '':
-    message = "Hi, I'm SrirachaBot, I can't do anything yet!"
-  else:
-      message = "Feature not available yet, Use \'!help\')"
-      print(topic)
-      sendmsg(message, channel)
+def help(topic):
+    message = ''
+    if not topic:
+        message = "SrirachaBot \'!help\' with topics" 
+        sendmsg(message, channel)
+    if topic == 'weather':
+        message = 'Weather will be implemented soon'
+        sendmsg(message, channel)
+    else:
+        message = "Feature not implemented yet. Use \'!help\'"
+        print(topic)
+        sendmsg(message, channel)
+
 
 def main():
-  joinchan(channel)
-  while 1:
-    ircmsg = ircsock.recv(2048).decode("UTF-8")
-    ircmsg = ircmsg.strip('\n\r')
-    print(ircmsg)
-    if ircmsg.find("PRIVMSG") != -1:
-      name = ircmsg.split('!',1)[0][1:]
-      message = ircmsg.split('PRIVMSG',1)[1].split(':',1)[1]
-      if message[:5] == '!help':
-        help(name, message[:5])
-      if len(name) < 17:
-        if message.find('Hi ' + botnick) != -1:
-          sendmsg("Hello " + name + "!")
-        if message[:5].find('!tell') != -1:
-          target = message.split(' ', 1)[1]
-          if target.find(' ') != -1:
-              message = target.split(' ', 1)[1]
-              target = target.split(' ')[0]
-          else:
-            target = name
-            message = "Could not parse. The message should be in the format of ‘.tell [target] [message]’ to work properly."
-          sendmsg(message, target)
-        if name.lower() == adminname.lower() and message.rstrip() == exitcode:
-          sendmsg("Heroes Never Die!")
-          ircsock.send(bytes("QUIT \n", "UTF-8"))
-          return
+    joinchan(channel)
+    while 1:
+        ircmsg = ircsock.recv(2048).decode("UTF-8")
+        ircmsg = ircmsg.strip('\n\r')
+        print(ircmsg)
+        if ircmsg.find("PRIVMSG") != -1:
+            name = ircmsg.split('!',1)[0][1:]
+            message = ircmsg.split('PRIVMSG',1)[1].split(':',1)[1]
+            if message[:5] == '!help':
+                help(message[6:])
+            if len(name) < 17:
+                if message.find('Hi ' + botnick) != -1:
+                    sendmsg("Hello " + name + "!")
+                if message[:5].find('!tell') != -1:
+                    target = message.split(' ', 1)[1]
+                    if target.find(' ') != -1:
+                        message = target.split(' ', 1)[1]
+                        target = target.split(' ')[0]
+                    else:
+                        target = name
+                        message = "Could not parse. The message should be in the format of ‘.tell [target] [message]’ to work properly."
+                    sendmsg(message, target)
+            if name.lower() == adminname.lower() and message.rstrip() == exitcode:
+                sendmsg("Heroes Never Die!")
+                ircsock.send(bytes("QUIT \n", "UTF-8"))
+                return
     else:
-      if ircmsg.find("PING :") != -1:
-        ping()
+        if ircmsg.find("PING :") != -1:
+            ping()
 
 main()
  
