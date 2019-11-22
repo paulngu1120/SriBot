@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import socket
+import socket, requests, json
 
 ircsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -29,15 +29,29 @@ def sendmsg(msg, target=channel): # sends messages to the target.
 def help(topic):
     message = ''
     if not topic:
+        #if there is no argument display a help menu to guide users
         message = "SrirachaBot \'!help\' with topics" 
         sendmsg(message, channel)
     if topic == 'weather':
-        message = 'Weather will be implemented soon'
+        message = 'Use \'!weather <zipcode>\' for detailed forecast in that area'
         sendmsg(message, channel)
     else:
         message = "Feature not implemented yet. Use \'!help\'"
         print(topic)
         sendmsg(message, channel)
+
+def weather(zipcode):
+    #rapidapi
+    url = "https://us-weather-by-zip-code.p.rapidapi.com/getweatherzipcode"
+    querystring = {"zip":zipcode}
+    headers = {
+            'x-rapidapi-host':"us-weather-by-zip-code.p.rapidapi.com",
+            'x-rapidapi-key':"d4d64d1a1emsh3a0702a55e170d5p1a2c02jsnaed2eceb8b88"
+            }
+    response = requests.request("GET", url, headers=headers, params=querystring)
+    #to parse json file into python dict
+    message = json.loads(response.text) 
+    sendmsg('The weather in ' + message['City'] + ' ' + message['State'] + ' is ' + message['Weather'] + ' at ' + message['TempF'] + ' degrees.')
 
 
 def main():
@@ -51,18 +65,13 @@ def main():
             message = ircmsg.split('PRIVMSG',1)[1].split(':',1)[1]
             if message[:5] == '!help':
                 help(message[6:])
+            if message[:8] == '!weather':
+                weather(message[9:])
             if len(name) < 17:
                 if message.find('Hi ' + botnick) != -1:
                     sendmsg("Hello " + name + "!")
-                if message[:5].find('!tell') != -1:
-                    target = message.split(' ', 1)[1]
-                    if target.find(' ') != -1:
-                        message = target.split(' ', 1)[1]
-                        target = target.split(' ')[0]
-                    else:
-                        target = name
-                        message = "Could not parse. The message should be in the format of ‘.tell [target] [message]’ to work properly."
-                    sendmsg(message, target)
+                if message.find('Bye ' + botnick) != -1:
+                    sendmsg("Bye " + name + "!")
             if name.lower() == adminname.lower() and message.rstrip() == exitcode:
                 sendmsg("Heroes Never Die!")
                 ircsock.send(bytes("QUIT \n", "UTF-8"))
@@ -71,5 +80,7 @@ def main():
         if ircmsg.find("PING :") != -1:
             ping()
 
-main()
+
+if __name__ == "__main__":
+    main()
  
